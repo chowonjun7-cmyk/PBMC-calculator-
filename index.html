@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PBMC Cell Ratio Calculator</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --accent: #2563eb;
+      --accent-soft: #eff6ff;
+      --danger: #b91c1c;
+      --warning-bg: #fff7ed;
+      --warning-line: #fed7aa;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      padding: 28px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans KR", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    header { margin-bottom: 22px; }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+      letter-spacing: -0.04em;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      margin: 0;
+      font-size: 15px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: minmax(320px, 430px) 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px) {
+      body { padding: 18px; }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 19px;
+      letter-spacing: -0.03em;
+    }
+
+    h3 {
+      margin: 20px 0 10px;
+      font-size: 16px;
+      color: #111827;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 118px;
+      gap: 10px;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .form-row:last-child { border-bottom: 0; }
+
+    label {
+      font-size: 14px;
+      color: #374151;
+    }
+
+    input {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 9px 10px;
+      font-size: 14px;
+      background: white;
+      color: var(--text);
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .wide-row {
+      display: grid;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .btn-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 12px;
+      padding: 10px 13px;
+      background: var(--accent);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      font-weight: 650;
+    }
+
+    button.secondary { background: #111827; }
+    button.ghost { color: var(--accent); background: var(--accent-soft); }
+    button:hover { filter: brightness(0.96); }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 720px) {
+      .summary { grid-template-columns: 1fr; }
+    }
+
+    .stat {
+      padding: 14px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+    }
+
+    .stat .label {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .stat .value {
+      font-size: 22px;
+      font-weight: 800;
+      margin-top: 3px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 14px;
+      font-size: 14px;
+    }
+
+    thead { background: #f3f4f6; }
+
+    th, td {
+      text-align: left;
+      padding: 10px 11px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      font-size: 13px;
+      color: #374151;
+    }
+
+    td.num {
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 900px) {
+      .charts { grid-template-columns: 1fr; }
+    }
+
+    .chart-box {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      background: #ffffff;
+    }
+
+    .chart-title {
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 16px;
+      min-height: 24px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 340px;
+      display: block;
+    }
+
+    .warning {
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-line);
+      color: #9a3412;
+      padding: 12px 13px;
+      border-radius: 14px;
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+
+    .warning.show { display: block; }
+
+    .formula {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #4b5563;
+      font-size: 12px;
+    }
+
+    .note {
+      color: var(--muted);
+      font-size: 13px;
+      background: #f9fafb;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+
+    .footer-note {
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>PBMC Cell Ratio Calculator</h1>
+      <p class="subtitle">Flow cytometry gate 비율을 입력하면 전체 cell 대비 주요 면역세포 비율, dead cell, other를 계산합니다.</p>
+    </header>
+
+    <div class="grid">
+      <section>
+        <div class="card">
+          <h2>그래프 / 출력 설정</h2>
+
+          <div class="wide-row">
+            <label for="sampleName">Sample 이름</label>
+            <input id="sampleName" type="text" value="PBMC Sample" />
+          </div>
+
+          <div class="wide-row">
+            <label for="barTitle">막대그래프 제목</label>
+            <input id="barTitle" type="text" value="PBMC final cell ratios" />
+          </div>
+
+          <div class="wide-row">
+            <label for="pieTitle">파이그래프 제목</label>
+            <input id="pieTitle" type="text" value="PBMC composition: CD4, CD8, B, NK, monocyte, DC, dead, other" />
+          </div>
+
+          <div class="wide-row">
+            <label for="totalCount">전체 event/cell count <span class="pill">선택</span></label>
+            <input id="totalCount" type="number" min="0" step="1" placeholder="예: 100000" />
+            <div class="hint">비워두면 비율만 계산합니다. 입력하면 추정 count도 함께 계산됩니다.</div>
+          </div>
+
+          <div class="btn-row">
+            <button type="button" onclick="calculate()">계산하기</button>
+            <button type="button" class="ghost" onclick="fillExample()">예시값 넣기</button>
+            <button type="button" class="secondary" onclick="copyTable()">표 복사</button>
+            <button type="button" class="ghost" onclick="resetInputs()">초기화</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Gate 비율 입력</h2>
+
+          <h3>1–2. Singlet / Live</h3>
+          <div class="form-row">
+            <label for="singlet">전체 중 Singlet %</label>
+            <input id="singlet" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="live">Singlet 중 Live %</label>
+            <input id="live" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+
+          <h3>3. Live 중 분율</h3>
+          <div class="form-row">
+            <label for="bCell">Live 중 B cell %</label>
+            <input id="bCell" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="tCell">Live 중 T cell %</label>
+            <input id="tCell" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="notTB">Live 중 Not T and B %</label>
+            <input id="notTB" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+
+          <h3>4–6. T cell 하위집단</h3>
+          <div class="form-row">
+            <label for="cd4">T cell 중 CD4 %</label>
+            <input id="cd4" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="cd8">T cell 중 CD8 %</label>
+            <input id="cd8" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="naiveCd4">CD4 중 Naive CD4 %</label>
+            <input id="naiveCd4" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="naiveCd8">CD8 중 Naive CD8 %</label>
+            <input id="naiveCd8" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+
+          <h3>7–9. Not T/B 하위집단</h3>
+          <div class="form-row">
+            <label for="nk">Not T/B 중 CD56+/CD16+ NK cell %</label>
+            <input id="nk" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="nonTBNK">Not T/B 중 Non T/B/NK cell %</label>
+            <input id="nonTBNK" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="nonMonocyte">Non T/B/NK 중 Non-Monocyte %</label>
+            <input id="nonMonocyte" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="monocyte">Non T/B/NK 중 Monocyte %</label>
+            <input id="monocyte" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+          <div class="form-row">
+            <label for="dc">Non-Monocyte 중 Dendritic cell %</label>
+            <input id="dc" type="number" step="0.01" min="0" max="100" placeholder="%" />
+          </div>
+
+          <div id="warningBox" class="warning"></div>
+        </div>
+      </section>
+
+      <section>
+        <div class="card">
+          <h2>요약</h2>
+          <div class="summary">
+            <div class="stat">
+              <div class="label">Sample</div>
+              <div class="value" id="summarySample">PBMC Sample</div>
+            </div>
+            <div class="stat">
+              <div class="label">Live singlet fraction</div>
+              <div class="value" id="summaryLiveSinglet">-</div>
+            </div>
+            <div class="stat">
+              <div class="label">Dead cell fraction</div>
+              <div class="value" id="summaryDead">-</div>
+            </div>
+          </div>
+
+          <div class="note">
+            파이그래프는 CD4+ T cell, CD8+ T cell, B cell, NK cell, monocyte, dendritic cell, dead cell을 먼저 배정하고, 남는 비율은 Other로 자동 계산합니다.
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>계산 결과 표</h2>
+          <div style="overflow-x:auto;">
+            <table id="resultTable">
+              <thead>
+                <tr>
+                  <th>Cell type</th>
+                  <th>전체 cell 대비 %</th>
+                  <th>추정 count</th>
+                  <th>계산식</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colspan="4" style="text-align:center;color:#6b7280;padding:24px;">값을 입력한 뒤 계산하기를 누르세요.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>그래프</h2>
+          <div class="charts">
+            <div class="chart-box">
+              <div class="chart-title" id="barTitleView">PBMC final cell ratios</div>
+              <canvas id="barCanvas" width="620" height="420"></canvas>
+            </div>
+            <div class="chart-box">
+              <div class="chart-title" id="pieTitleView">PBMC composition</div>
+              <canvas id="pieCanvas" width="620" height="420"></canvas>
+            </div>
+          </div>
+          <div class="footer-note">
+            파이그래프의 Other = 100 - (CD4+ T + CD8+ T + B + NK + Monocyte + DC + Dead cell)입니다. 비일관적인 gate 입력으로 합이 100%를 넘으면 Other는 0으로 표시하고 경고를 띄웁니다.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const inputIds = [
+      "sampleName", "barTitle", "pieTitle", "totalCount",
+      "singlet", "live", "bCell", "tCell", "notTB", "cd4", "cd8",
+      "naiveCd4", "naiveCd8", "nk", "nonTBNK", "nonMonocyte", "monocyte", "dc"
+    ];
+
+    function val(id) {
+      const element = document.getElementById(id);
+      const parsed = parseFloat(element.value);
+      return Number.isFinite(parsed) ? parsed : 0;
+    }
+
+    function pctToFrac(x) {
+      return x / 100;
+    }
+
+    function fmt(x, digits = 4) {
+      if (!Number.isFinite(x)) return "-";
+      return x.toFixed(digits);
+    }
+
+    function fmtCount(x) {
+      if (!Number.isFinite(x)) return "-";
+      return Math.round(x).toLocaleString();
+    }
+
+    function clampPercent(x) {
+      return Math.max(0, Math.min(100, x));
+    }
+
+    function getChartColors(n) {
+      const palette = [
+        "#2563eb", "#16a34a", "#f97316", "#9333ea", "#dc2626",
+        "#0891b2", "#ca8a04", "#4f46e5", "#0f766e", "#be123c",
+        "#6b7280", "#64748b"
+      ];
+      return Array.from({ length: n }, (_, i) => palette[i % palette.length]);
+    }
+
+    function calculate() {
+      const sampleName = document.getElementById("sampleName").value.trim() || "PBMC Sample";
+      const barTitle = document.getElementById("barTitle").value.trim() || "PBMC final cell ratios";
+      const pieTitle = document.getElementById("pieTitle").value.trim() || "PBMC composition";
+      const totalCount = val("totalCount");
+
+      const s = pctToFrac(val("singlet"));
+      const l = pctToFrac(val("live"));
+      const b = pctToFrac(val("bCell"));
+      const t = pctToFrac(val("tCell"));
+      const ntb = pctToFrac(val("notTB"));
+      const cd4 = pctToFrac(val("cd4"));
+      const cd8 = pctToFrac(val("cd8"));
+      const n4 = pctToFrac(val("naiveCd4"));
+      const n8 = pctToFrac(val("naiveCd8"));
+      const nk = pctToFrac(val("nk"));
+      const nonTBNK = pctToFrac(val("nonTBNK"));
+      const nonMono = pctToFrac(val("nonMonocyte"));
+      const mono = pctToFrac(val("monocyte"));
+      const dc = pctToFrac(val("dc"));
+
+      const liveSinglet = s * l * 100;
+      const deadCell = s * (1 - l) * 100;
+
+      const bCell = s * l * b * 100;
+      const tCell = s * l * t * 100;
+      const cd4T = s * l * t * cd4 * 100;
+      const cd8T = s * l * t * cd8 * 100;
+      const naiveCd4T = s * l * t * cd4 * n4 * 100;
+      const naiveCd8T = s * l * t * cd8 * n8 * 100;
+      const nkCell = s * l * ntb * nk * 100;
+      const monocyte = s * l * ntb * nonTBNK * mono * 100;
+      const dendritic = s * l * ntb * nonTBNK * nonMono * dc * 100;
+
+      const pieAllocatedRaw = cd4T + cd8T + bCell + nkCell + monocyte + dendritic + deadCell;
+      const otherRaw = 100 - pieAllocatedRaw;
+      const other = Math.max(otherRaw, 0);
+
+      const results = [
+        { name: "B cell", percent: bCell, formula: "Singlet × Live × B cell" },
+        { name: "T cell", percent: tCell, formula: "Singlet × Live × T cell" },
+        { name: "CD4+ T cell", percent: cd4T, formula: "Singlet × Live × T cell × CD4" },
+        { name: "CD8+ T cell", percent: cd8T, formula: "Singlet × Live × T cell × CD8" },
+        { name: "Naive CD4+ T cell", percent: naiveCd4T, formula: "Singlet × Live × T cell × CD4 × Naive CD4" },
+        { name: "Naive CD8+ T cell", percent: naiveCd8T, formula: "Singlet × Live × T cell × CD8 × Naive CD8" },
+        { name: "CD56+/CD16+ NK cell", percent: nkCell, formula: "Singlet × Live × Not T/B × NK" },
+        { name: "Monocyte", percent: monocyte, formula: "Singlet × Live × Not T/B × Non T/B/NK × Monocyte" },
+        { name: "Dendritic cell", percent: dendritic, formula: "Singlet × Live × Not T/B × Non T/B/NK × Non-Monocyte × Dendritic cell" },
+        { name: "Dead cell", percent: deadCell, formula: "Singlet × (100 - Live)" },
+        { name: "Other", percent: other, formula: "100 - (CD4+ T + CD8+ T + B + NK + Monocyte + DC + Dead cell)" }
+      ];
+
+      const pieData = [
+        { name: "CD4+ T cell", percent: cd4T },
+        { name: "CD8+ T cell", percent: cd8T },
+        { name: "B cell", percent: bCell },
+        { name: "NK cell", percent: nkCell },
+        { name: "Monocyte", percent: monocyte },
+        { name: "Dendritic cell", percent: dendritic },
+        { name: "Dead cell", percent: deadCell },
+        { name: "Other", percent: other }
+      ];
+
+      renderSummary(sampleName, liveSinglet, deadCell);
+      renderTable(results, totalCount);
+      renderWarnings({
+        bPlusTPlusNotTB: val("bCell") + val("tCell") + val("notTB"),
+        cd4PlusCd8: val("cd4") + val("cd8"),
+        nkPlusNonTBNK: val("nk") + val("nonTBNK"),
+        nonMonoPlusMono: val("nonMonocyte") + val("monocyte"),
+        pieAllocatedRaw,
+        otherRaw,
+        singlet: val("singlet"),
+        live: val("live")
+      });
+
+      document.getElementById("barTitleView").textContent = barTitle;
+      document.getElementById("pieTitleView").textContent = pieTitle;
+
+      drawBarChart("barCanvas", results);
+      drawPieChart("pieCanvas", pieData);
+    }
+
+    function renderSummary(sampleName, liveSinglet, deadCell) {
+      document.getElementById("summarySample").textContent = sampleName;
+      document.getElementById("summaryLiveSinglet").textContent = fmt(liveSinglet, 2) + "%";
+      document.getElementById("summaryDead").textContent = fmt(deadCell, 2) + "%";
+    }
+
+    function renderTable(results, totalCount) {
+      const tbody = document.querySelector("#resultTable tbody");
+      tbody.innerHTML = "";
+
+      results.forEach(row => {
+        const tr = document.createElement("tr");
+        const estimated = totalCount > 0 ? totalCount * row.percent / 100 : NaN;
+
+        tr.innerHTML = `
+          <td>${row.name}</td>
+          <td class="num">${fmt(row.percent, 4)}%</td>
+          <td class="num">${totalCount > 0 ? fmtCount(estimated) : "-"}</td>
+          <td class="formula">${row.formula}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderWarnings(values) {
+      const messages = [];
+      const tolerance = 3;
+
+      function near100(label, value) {
+        if (value > 0 && Math.abs(value - 100) > tolerance) {
+          messages.push(`${label} 합이 ${value.toFixed(2)}%입니다. 100%에서 많이 벗어나면 gate 입력값 또는 제외된 population을 확인하세요.`);
+        }
+      }
+
+      near100("Live 중 B cell + T cell + Not T/B", values.bPlusTPlusNotTB);
+      near100("T cell 중 CD4 + CD8", values.cd4PlusCd8);
+      near100("Not T/B 중 NK + Non T/B/NK", values.nkPlusNonTBNK);
+      near100("Non T/B/NK 중 Non-Monocyte + Monocyte", values.nonMonoPlusMono);
+
+      if (values.pieAllocatedRaw > 100.0001) {
+        messages.push(`파이그래프에 배정된 값의 합이 ${values.pieAllocatedRaw.toFixed(2)}%라서 100%를 넘습니다. Other는 0%로 표시됩니다. CD4/CD8 합, Live/Dead 계산, gate 비율을 확인하세요.`);
+      }
+
+      if (values.singlet > 100 || values.live > 100) {
+        messages.push("Singlet 또는 Live 값이 100%를 넘습니다. 입력값을 확인하세요.");
+      }
+
+      const box = document.getElementById("warningBox");
+      if (messages.length) {
+        box.innerHTML = messages.map(m => `<div>• ${m}</div>`).join("");
+        box.classList.add("show");
+      } else {
+        box.innerHTML = "";
+        box.classList.remove("show");
+      }
+    }
+
+    function drawBarChart(canvasId, data) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const padding = { top: 22, right: 30, bottom: 125, left: 64 };
+      const chartW = w - padding.left - padding.right;
+      const chartH = h - padding.top - padding.bottom;
+
+      const maxVal = Math.max(1, ...data.map(d => d.percent));
+      const yMax = Math.ceil(maxVal * 1.15 / 5) * 5;
+      const colors = getChartColors(data.length);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+
+      ctx.strokeStyle = "#e5e7eb";
+      ctx.lineWidth = 1;
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px Arial";
+
+      for (let i = 0; i <= 5; i++) {
+        const y = padding.top + chartH - (chartH * i / 5);
+        const val = yMax * i / 5;
+        ctx.beginPath();
+        ctx.moveTo(padding.left, y);
+        ctx.lineTo(w - padding.right, y);
+        ctx.stroke();
+        ctx.fillText(val.toFixed(0) + "%", 12, y + 4);
+      }
+
+      const gap = 7;
+      const barW = Math.max(14, (chartW - gap * (data.length - 1)) / data.length);
+
+      data.forEach((d, i) => {
+        const x = padding.left + i * (barW + gap);
+        const barH = (d.percent / yMax) * chartH;
+        const y = padding.top + chartH - barH;
+
+        ctx.fillStyle = colors[i];
+        roundRect(ctx, x, y, barW, barH, 7);
+        ctx.fill();
+
+        ctx.fillStyle = "#111827";
+        ctx.font = "10px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(d.percent.toFixed(2) + "%", x + barW / 2, y - 6);
+
+        ctx.save();
+        ctx.translate(x + barW / 2, padding.top + chartH + 12);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = "#374151";
+        ctx.font = "10px Arial";
+        ctx.textAlign = "right";
+        ctx.fillText(d.name, 0, 0);
+        ctx.restore();
+      });
+
+      ctx.strokeStyle = "#9ca3af";
+      ctx.beginPath();
+      ctx.moveTo(padding.left, padding.top);
+      ctx.lineTo(padding.left, padding.top + chartH);
+      ctx.lineTo(w - padding.right, padding.top + chartH);
+      ctx.stroke();
+
+      ctx.textAlign = "left";
+    }
+
+    function drawPieChart(canvasId, data) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const filtered = data.filter(d => d.percent > 0);
+      const total = filtered.reduce((acc, d) => acc + d.percent, 0);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, w, h);
+
+      if (total <= 0) {
+        ctx.fillStyle = "#6b7280";
+        ctx.font = "15px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText("파이그래프를 그릴 값이 없습니다.", w / 2, h / 2);
+        return;
+      }
+
+      const colors = getChartColors(filtered.length);
+      const cx = w * 0.34;
+      const cy = h * 0.47;
+      const radius = Math.min(w, h) * 0.28;
+      let start = -Math.PI / 2;
+
+      filtered.forEach((d, i) => {
+        const angle = (d.percent / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.closePath();
+        ctx.fillStyle = colors[i];
+        ctx.fill();
+        start += angle;
+      });
+
+      ctx.strokeStyle = "#ffffff";
+      ctx.lineWidth = 2;
+      start = -Math.PI / 2;
+      filtered.forEach((d) => {
+        const angle = (d.percent / total) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, start, start + angle);
+        ctx.stroke();
+        start += angle;
+      });
+
+      const legendX = w * 0.62;
+      let legendY = 48;
+      ctx.textAlign = "left";
+      ctx.font = "12px Arial";
+
+      filtered.forEach((d, i) => {
+        const pieShare = d.percent / total * 100;
+        ctx.fillStyle = colors[i];
+        ctx.fillRect(legendX, legendY - 10, 12, 12);
+
+        ctx.fillStyle = "#111827";
+        ctx.fillText(`${d.name}: ${d.percent.toFixed(2)}%`, legendX + 18, legendY);
+
+        ctx.fillStyle = "#6b7280";
+        ctx.fillText(`pie share ${pieShare.toFixed(1)}%`, legendX + 18, legendY + 15);
+
+        legendY += 38;
+      });
+
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText("Other fills the remaining percentage up to 100%.", w / 2, h - 18);
+    }
+
+    function roundRect(ctx, x, y, width, height, radius) {
+      const r = Math.min(radius, width / 2, Math.abs(height) / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + width - r, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + r);
+      ctx.lineTo(x + width, y + height - r);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - r, y + height);
+      ctx.lineTo(x + r, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    function fillExample() {
+      const example = {
+        sampleName: "Patient 4 PBMC",
+        barTitle: "Patient 4 PBMC final cell ratios",
+        pieTitle: "Patient 4 PBMC composition",
+        totalCount: "",
+        singlet: 95.00,
+        live: 90.00,
+        bCell: 7.44,
+        tCell: 54.93,
+        notTB: 37.63,
+        cd4: 45.09,
+        cd8: 7.00,
+        naiveCd4: 30.00,
+        naiveCd8: 35.00,
+        nk: 0.86,
+        nonTBNK: 99.14,
+        nonMonocyte: 90.10,
+        monocyte: 9.90,
+        dc: 0.18
+      };
+
+      Object.entries(example).forEach(([id, value]) => {
+        document.getElementById(id).value = value;
+      });
+      calculate();
+    }
+
+    function resetInputs() {
+      const defaults = {
+        sampleName: "PBMC Sample",
+        barTitle: "PBMC final cell ratios",
+        pieTitle: "PBMC composition: CD4, CD8, B, NK, monocyte, DC, dead, other"
+      };
+
+      inputIds.forEach(id => {
+        const el = document.getElementById(id);
+        el.value = defaults[id] || "";
+      });
+
+      document.querySelector("#resultTable tbody").innerHTML =
+        '<tr><td colspan="4" style="text-align:center;color:#6b7280;padding:24px;">값을 입력한 뒤 계산하기를 누르세요.</td></tr>';
+
+      document.getElementById("summarySample").textContent = "PBMC Sample";
+      document.getElementById("summaryLiveSinglet").textContent = "-";
+      document.getElementById("summaryDead").textContent = "-";
+      document.getElementById("barTitleView").textContent = defaults.barTitle;
+      document.getElementById("pieTitleView").textContent = defaults.pieTitle;
+      document.getElementById("warningBox").classList.remove("show");
+
+      clearCanvas("barCanvas", "값을 입력한 뒤 계산하기를 누르세요.");
+      clearCanvas("pieCanvas", "값을 입력한 뒤 계산하기를 누르세요.");
+    }
+
+    function clearCanvas(canvasId, message) {
+      const canvas = document.getElementById(canvasId);
+      const ctx = canvas.getContext("2d");
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#6b7280";
+      ctx.font = "15px Arial";
+      ctx.textAlign = "center";
+      ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+    }
+
+    function copyTable() {
+      const rows = Array.from(document.querySelectorAll("#resultTable tr"));
+      const text = rows.map(row => {
+        return Array.from(row.children).map(cell => cell.innerText.trim()).join("\t");
+      }).join("\n");
+
+      navigator.clipboard.writeText(text).then(() => {
+        alert("표가 클립보드에 복사되었습니다.");
+      }).catch(() => {
+        alert("복사에 실패했습니다. 표를 직접 드래그해서 복사하세요.");
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      resetInputs();
+
+      inputIds.forEach(id => {
+        const el = document.getElementById(id);
+        el.addEventListener("input", () => {
+          const numericIds = inputIds.filter(x => !["sampleName", "barTitle", "pieTitle"].includes(x));
+          const hasNumber = numericIds.some(x => document.getElementById(x).value !== "");
+          if (hasNumber) calculate();
+        });
+      });
+    });
+  </script>
+</body>
+</html>
